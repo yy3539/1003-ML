@@ -1,6 +1,8 @@
 """
     N-body simulation.
 """
+import numpy as np
+from itertools import combinations
 
 def compute_b(m, dt, dx, dy, dz):
     mag = compute_mag(dt, dx, dy, dz)
@@ -13,66 +15,59 @@ def update_vs(v1, v2, dt, dx, dy, dz, m1, m2):
     #Reducing function call overhead
     b1=compute_b(m1, dt, dx, dy, dz)
     b2=compute_b(m2, dt, dx, dy, dz)
-    
-    v1[0] -= dx * b2
-    v1[1] -= dy * b2
-    v1[2] -= dz * b2
-    v2[0] += dx * b1
-    v2[1] += dy * b1
-    v2[2] += dz * b1
+
+    #Use NumPy
+    v1 -= np.array([dx * b2, dy * b2, dz * b2])
+    v2 += np.array([dx * b1, dy * b1, dz * b1])
+
 
 def update_rs(r, dt, vx, vy, vz):
+    #Use NumPy
     r[0] += dt * vx
     r[1] += dt * vy
     r[2] += dt * vz
 
-def compute_deltas(dt):
-    seenit = set()
-    for body1 in BODIES.keys():
-        for body2 in BODIES.keys():
-            if (body1 != body2) and not (body2 in seenit):
-                ([x1, y1, z1], v1, m1) = BODIES[body1]
-                ([x2, y2, z2], v2, m2) = BODIES[body2]
-                (dx, dy, dz) = (x1-x2, y1-y2, z1-z2)
-                update_vs(v1, v2, dt, dx, dy, dz, m1, m2)
-                seenit.add(body1)
-    return 
+
+
+def compute_deltas(x1, x2, y1, y2, z1, z2):
+    return (x1-x2, y1-y2, z1-z2)
+
 
 def advance(dt):
     '''
         advance the system one timestep
     '''
-    compute_deltas(dt)
-        
+    for (body1, body2) in combinations(BODIES.keys(), 2):
+        ([x1, y1, z1], v1, m1) = BODIES[body1]
+        ([x2, y2, z2], v2, m2) = BODIES[body2]
+        (dx, dy, dz) = compute_deltas(x1, x2, y1, y2, z1, z2)
+        update_vs(v1, v2, dt, dx, dy, dz, m1, m2)
+  
     for body in BODIES.keys():
         (r, [vx, vy, vz], m) = BODIES[body]
         update_rs(r, dt, vx, vy, vz)
+                 
 
-def compute_energy(e):
-    seenit = set()
-    for body1 in BODIES.keys():
-        for body2 in BODIES.keys():
-            if (body1 != body2) and not (body2 in seenit):
-                ([x1, y1, z1], v1, m1) = BODIES[body1]
-                ([x2, y2, z2], v2, m2) = BODIES[body2]
-                (dx, dy, dz) = (x1-x2, y1-y2, z1-z2)
-                e-= (m1 * m2) / ((dx * dx + dy * dy + dz * dz) ** 0.5)
-                seenit.add(body1)
-    return e
-
-
-
-
+    
+def compute_energy(m1, m2, dx, dy, dz):
+    return (m1 * m2) / ((dx * dx + dy * dy + dz * dz) ** 0.5)
+    
 def report_energy(e=0.0):
     '''
         compute the energy and return it so that it can be printed
     '''
-    _=compute_energy(e)   
+    # remove pair checking and remove nest loop
+    for (body1, body2) in combinations(BODIES.keys(), 2):
+        ([x1, y1, z1], v1, m1) = BODIES[body1]
+        ([x2, y2, z2], v2, m2) = BODIES[body2]
+        (dx, dy, dz) = compute_deltas(x1, x2, y1, y2, z1, z2)
+        e -= compute_energy(m1, m2, dx, dy, dz)
+        
     for body in BODIES.keys():
         (r, [vx, vy, vz], m) = BODIES[body]
-        _+= m * (vx * vx + vy * vy + vz * vz) / 2.
+        e += m * (vx * vx + vy * vy + vz * vz) / 2.
         
-    return _
+    return e
 
 def offset_momentum(ref, px=0.0, py=0.0, pz=0.0):
     '''
@@ -108,6 +103,8 @@ def nbody(loops, reference, iterations):
         print(report_energy())
 
 if __name__ == '__main__':
+    #Using local rather than global variables
+    
     PI = 3.14159265358979323
     SOLAR_MASS = 4 * PI * PI
     DAYS_PER_YEAR = 365.24

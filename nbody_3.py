@@ -101,6 +101,8 @@ def nbody(loops, reference, iterations):
         print(report_energy())
 
 if __name__ == '__main__':
+    #Using local rather than global variables
+    
     PI = 3.14159265358979323
     SOLAR_MASS = 4 * PI * PI
     DAYS_PER_YEAR = 365.24
