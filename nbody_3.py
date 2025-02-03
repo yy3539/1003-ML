@@ -30,18 +30,21 @@ def advance(dt):
     '''
         advance the system one timestep
     '''
+
+    #local variable
+    _=BODIES
     seenit = []
-    for body1 in BODIES.keys():
-        for body2 in BODIES.keys():
+    for body1 in _.keys():
+        for body2 in _.keys():
             if (body1 != body2) and not (body2 in seenit):
-                ([x1, y1, z1], v1, m1) = BODIES[body1]
-                ([x2, y2, z2], v2, m2) = BODIES[body2]
+                ([x1, y1, z1], v1, m1) = _[body1]
+                ([x2, y2, z2], v2, m2) = _[body2]
                 (dx, dy, dz) = compute_deltas(x1, x2, y1, y2, z1, z2)
                 update_vs(v1, v2, dt, dx, dy, dz, m1, m2)
                 seenit.append(body1)
         
-    for body in BODIES.keys():
-        (r, [vx, vy, vz], m) = BODIES[body]
+    for body in _.keys():
+        (r, [vx, vy, vz], m) = _[body]
         update_rs(r, dt, vx, vy, vz)
 
 def compute_energy(m1, m2, dx, dy, dz):
@@ -51,18 +54,20 @@ def report_energy(e=0.0):
     '''
         compute the energy and return it so that it can be printed
     '''
+    #local variable
+    _=BODIES
     seenit = []
-    for body1 in BODIES.keys():
-        for body2 in BODIES.keys():
+    for body1 in _.keys():
+        for body2 in _.keys():
             if (body1 != body2) and not (body2 in seenit):
-                ((x1, y1, z1), v1, m1) = BODIES[body1]
-                ((x2, y2, z2), v2, m2) = BODIES[body2]
+                ((x1, y1, z1), v1, m1) = _[body1]
+                ((x2, y2, z2), v2, m2) = _[body2]
                 (dx, dy, dz) = compute_deltas(x1, x2, y1, y2, z1, z2)
                 e -= compute_energy(m1, m2, dx, dy, dz)
                 seenit.append(body1)
         
-    for body in BODIES.keys():
-        (r, [vx, vy, vz], m) = BODIES[body]
+    for body in _.keys():
+        (r, [vx, vy, vz], m) = _[body]
         e += m * (vx * vx + vy * vy + vz * vz) / 2.
         
     return e
@@ -72,8 +77,11 @@ def offset_momentum(ref, px=0.0, py=0.0, pz=0.0):
         ref is the body in the center of the system
         offset values from this reference
     '''
-    for body in BODIES.keys():
-        (r, [vx, vy, vz], m) = BODIES[body]
+    #local variable
+
+    _=BODIES
+    for body in _.keys():
+        (r, [vx, vy, vz], m) = _[body]
         px -= vx * m
         py -= vy * m
         pz -= vz * m
@@ -91,8 +99,10 @@ def nbody(loops, reference, iterations):
         reference - body at center of system
         iterations - number of timesteps to advance
     '''
+    #local variable
+    _=BODIES
     # Set up global state
-    offset_momentum(BODIES[reference])
+    offset_momentum(_[reference])
 
     for _ in range(loops):
         report_energy()

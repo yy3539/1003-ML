@@ -58,6 +58,7 @@ def update_vs(v1, v2, dt, dx, dy, dz, m1, m2):
     v2[0] += dx * compute_b(m1, dt, dx, dy, dz)
     v2[1] += dy * compute_b(m1, dt, dx, dy, dz)
     v2[2] += dz * compute_b(m1, dt, dx, dy, dz)
+
 def update_rs(r, dt, vx, vy, vz):
     r[0] += dt * vx
     r[1] += dt * vy
@@ -67,18 +68,15 @@ def advance(dt):
     '''
         advance the system one timestep
     '''
-    #Using alternatives to membership testing of lists 
-    #change list to test
-    
-    seenit = set()
+    seenit = []
     for body1 in BODIES.keys():
         for body2 in BODIES.keys():
-            if (body1 != body2) and body2 not in seenit:
+            if (body1 != body2) and not (body2 in seenit):
                 ([x1, y1, z1], v1, m1) = BODIES[body1]
                 ([x2, y2, z2], v2, m2) = BODIES[body2]
                 (dx, dy, dz) = compute_deltas(x1, x2, y1, y2, z1, z2)
                 update_vs(v1, v2, dt, dx, dy, dz, m1, m2)
-                seenit.add(body1)
+                seenit.append(body1)
         
     for body in BODIES.keys():
         (r, [vx, vy, vz], m) = BODIES[body]
@@ -91,18 +89,15 @@ def report_energy(e=0.0):
     '''
         compute the energy and return it so that it can be printed
     '''
-     #Using alternatives to membership testing of lists 
-    #change list to test
-    
-    seenit = set()
+    seenit = []
     for body1 in BODIES.keys():
         for body2 in BODIES.keys():
-            if (body1 != body2) and body2 not in seenit:
+            if (body1 != body2) and not (body2 in seenit):
                 ((x1, y1, z1), v1, m1) = BODIES[body1]
                 ((x2, y2, z2), v2, m2) = BODIES[body2]
                 (dx, dy, dz) = compute_deltas(x1, x2, y1, y2, z1, z2)
                 e -= compute_energy(m1, m2, dx, dy, dz)
-                seenit.add(body1)
+                seenit.append(body1)
         
     for body in BODIES.keys():
         (r, [vx, vy, vz], m) = BODIES[body]
@@ -110,18 +105,22 @@ def report_energy(e=0.0):
         
     return e
 
-
 def offset_momentum(ref, px=0.0, py=0.0, pz=0.0):
     '''
         ref is the body in the center of the system
         offset values from this reference
     '''
-    for body in BODIES.keys():
-        (r, [vx, vy, vz], m) = BODIES[body]
-        px -= vx * m
-        py -= vy * m
-        pz -= vz * m
-        
+    
+    #list comprehension
+    momentum_data = [(v[0] * m, v[1] * m, v[2] * m)
+                     for (_, v, m) in BODIES.values()]
+    
+    total_px, total_py, total_pz = (sum(components) for components in zip(*momentum_data))
+    
+    px -= total_px
+    py -= total_py
+    pz -= total_pz
+    
     (r, v, m) = ref
     v[0] = px / m
     v[1] = py / m
@@ -146,4 +145,6 @@ def nbody(loops, reference, iterations):
 
 if __name__ == '__main__':
     nbody(100, 'sun', 20000)
+
+
 
